@@ -7318,16 +7318,16 @@
     window.addEventListener('mousemove', onMove, { passive: true });
   })();
 
+
+
   /* ===== Form ===== *
    * Both signup forms (top hero + bottom CTA) POST the email to a serverless
-   * function at /api/subscribe that proxies to Beehiiv with our private API
-   * key. See /api/README.md for the function source + deployment steps.
-   *
-   * Why a proxy? Beehiiv's subscribe endpoint requires a Bearer auth token;
-   * putting that token in client JS would expose it to anyone who views the
+   * function at /api/subscribe that proxies to **Resend Audiences**.
+   * We updated api/subscribe.js to use Resend.
+   
    * page source. The function keeps the key on the server. */
   (function forms() {
-    // Endpoint that proxies to Beehiiv. Same-origin so no CORS to configure.
+    // Endpoint that proxies to Resend. Same-origin so no CORS to configure.
     // Works out of the box on Vercel (/api/*), Netlify (with redirects), or
     // any host with serverless functions.
     const ENDPOINT = '/api/subscribe';
