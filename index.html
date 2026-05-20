@@ -7358,6 +7358,7 @@ nav.masthead .nav-cta {
 
 
 /* ===== Form with duplicate email handling ===== */
+/* ===== Form with duplicate email handling ===== */
 (function forms() {
   const ENDPOINT = '/api/subscribe';
 
@@ -7376,7 +7377,7 @@ nav.masthead .nav-cta {
       if (!response.ok) {
         throw new Error(data.error || `HTTP ${response.status}`);
       }
-      return data; // data may contain { ok: true, message: "..." }
+      return data;
     } catch (err) {
       clearTimeout(timeout);
       throw err;
@@ -7401,23 +7402,15 @@ nav.masthead .nav-cta {
   function wire(formId) {
     const form = document.getElementById(formId);
     if (!form) return;
+    
+    // Directly get the correct notification div by its unique ID
+    const notificationId = formId === 'topForm' ? 'topFormNotification' : 'bottomFormNotification';
+    const notification = document.getElementById(notificationId);
+    if (!notification) console.warn(`Notification #${notificationId} not found`);
+    
     const input = form.querySelector('input[type="email"]');
     const honeypot = form.querySelector('input[name="hp_email"]');
     const buttonLabel = form.querySelector('button .label');
-    
-    // Find notification container
-    let notification = null;
-    if (formId === 'topForm') {
-      const heroInner = form.closest('.hero-inner');
-      if (heroInner) notification = heroInner.querySelector('.signup-notification');
-    } else {
-      const closingSection = form.closest('.closing');
-      if (closingSection) notification = closingSection.querySelector('.signup-notification');
-    }
-    if (!notification) {
-      notification = form.closest('section')?.querySelector('.signup-notification');
-    }
-
     let submitting = false;
 
     form.addEventListener('submit', async (e) => {
@@ -7426,7 +7419,7 @@ nav.masthead .nav-cta {
 
       input.value = input.value.trim();
 
-      // Honeypot
+      // Honeypot check
       if (honeypot && honeypot.value) {
         if (notification) showNotification(notification, 'You’re on the list!', true);
         buttonLabel.textContent = 'Saved';
@@ -7450,16 +7443,14 @@ nav.masthead .nav-cta {
       try {
         const result = await subscribe(input.value, formId === 'topForm' ? 'hero' : 'closing');
         
-        // Check if this is a duplicate
+        // Check for duplicate message
         if (result.message && result.message.includes('already on the waitlist')) {
-          // Duplicate email
           if (notification) showNotification(notification, 'You already signed up for this', true, true);
           buttonLabel.textContent = 'Already signed up';
           input.value = '';
           input.placeholder = "you're already on the list";
           form.style.borderColor = 'var(--ink)';
           setTimeout(() => { form.style.opacity = '0.55'; }, 1200);
-          // Keep submitting = true to prevent resubmission
         } else {
           // New signup – success
           if (notification) showNotification(notification, 'You’re now on the waitlist!', true);
@@ -7483,7 +7474,6 @@ nav.masthead .nav-cta {
   wire('topForm');
   wire('bottomForm');
 })();
-           
 
   /* ===== Founder Spotify embeds — lazy load on first hover =====
      Spotify's iframe player refuses to render when the page is served from
