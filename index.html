@@ -4459,7 +4459,7 @@ nav.masthead .nav-cta {
     </form>
     <p id="topFormStatus" class="visually-hidden" role="status" aria-live="polite"></p>
     <p class="signup-agreement reveal delay-3">By joining, you agree to our <a href="#privacy">Privacy</a> and <a href="#terms">Terms</a>.</p>
-    <div class="signup-notification" role="status" aria-live="polite"></div>
+    <div id="topFormNotification" class="signup-notification" role="status" aria-live="polite"></div>
   </div>
 </section>
 
@@ -7356,7 +7356,7 @@ nav.masthead .nav-cta {
 
 
 
-/* ===== Form with guaranteed visible notification ===== */
+/* ===== Form with duplicate email handling ===== */
 (function forms() {
   const ENDPOINT = '/api/subscribe';
 
@@ -7371,46 +7371,40 @@ nav.masthead .nav-cta {
         signal: controller.signal,
       });
       clearTimeout(timeout);
+      const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const text = await response.text().catch(() => '');
-        throw new Error('subscribe failed: ' + response.status + ' ' + text);
+        throw new Error(data.error || `HTTP ${response.status}`);
       }
-      return response.json().catch(() => ({}));
+      return data; // data may contain { ok: true, message: "..." }
     } catch (err) {
       clearTimeout(timeout);
       throw err;
     }
   }
 
-  function showNotification(container, message, isSuccess) {
-    if (!container) {
-      console.warn('showNotification: container not found');
-      return;
-    }
-    console.log('Showing notification:', message, isSuccess);
+  function showNotification(container, message, isSuccess, isDuplicate = false) {
+    if (!container) return;
     container.textContent = message;
-    container.classList.remove('success', 'error', 'show');
-    // Force reflow
+    container.classList.remove('success', 'error', 'duplicate', 'show');
     void container.offsetWidth;
-    container.classList.add(isSuccess ? 'success' : 'error', 'show');
-    if (isSuccess) {
-      setTimeout(() => {
-        container.classList.remove('show');
-      }, 5000);
+    if (isDuplicate) {
+      container.classList.add('duplicate', 'show');
+    } else {
+      container.classList.add(isSuccess ? 'success' : 'error', 'show');
     }
+    setTimeout(() => {
+      container.classList.remove('show');
+    }, 5000);
   }
 
   function wire(formId) {
     const form = document.getElementById(formId);
-    if (!form) {
-      console.warn('Form not found:', formId);
-      return;
-    }
+    if (!form) return;
     const input = form.querySelector('input[type="email"]');
     const honeypot = form.querySelector('input[name="hp_email"]');
     const buttonLabel = form.querySelector('button .label');
     
-    // MORE RELIABLE container selection: find by class inside the same .hero-inner or .closing
+    // Find notification container
     let notification = null;
     if (formId === 'topForm') {
       const heroInner = form.closest('.hero-inner');
@@ -7419,15 +7413,8 @@ nav.masthead .nav-cta {
       const closingSection = form.closest('.closing');
       if (closingSection) notification = closingSection.querySelector('.signup-notification');
     }
-    // Fallback: look anywhere in the same parent section
     if (!notification) {
       notification = form.closest('section')?.querySelector('.signup-notification');
-    }
-    
-    if (!notification) {
-      console.error('Notification container not found for form', formId);
-    } else {
-      console.log('Notification found for', formId);
     }
 
     let submitting = false;
@@ -7460,19 +7447,29 @@ nav.masthead .nav-cta {
       form.style.opacity = '0.85';
 
       try {
-        await subscribe(input.value, formId === 'topForm' ? 'hero' : 'closing');
-
-        // SUCCESS
-        console.log('Subscribe succeeded');
-        buttonLabel.textContent = 'Saved';
-        if (notification) showNotification(notification, 'You’re now on the waitlist!', true);
-        input.value = '';
-        input.placeholder = "we'll be in touch when it opens.";
-        form.style.borderColor = 'var(--ink)';
-        setTimeout(() => { form.style.opacity = '0.55'; }, 1200);
-        // Keep submitting = true to prevent double submission
+        const result = await subscribe(input.value, formId === 'topForm' ? 'hero' : 'closing');
+        
+        // Check if this is a duplicate
+        if (result.message && result.message.includes('already on the waitlist')) {
+          // Duplicate email
+          if (notification) showNotification(notification, 'You already signed up for this', true, true);
+          buttonLabel.textContent = 'Already signed up';
+          input.value = '';
+          input.placeholder = "you're already on the list";
+          form.style.borderColor = 'var(--ink)';
+          setTimeout(() => { form.style.opacity = '0.55'; }, 1200);
+          // Keep submitting = true to prevent resubmission
+        } else {
+          // New signup – success
+          if (notification) showNotification(notification, 'You’re now on the waitlist!', true);
+          buttonLabel.textContent = 'Saved';
+          input.value = '';
+          input.placeholder = "we'll be in touch when it opens.";
+          form.style.borderColor = 'var(--ink)';
+          setTimeout(() => { form.style.opacity = '0.55'; }, 1200);
+        }
       } catch (err) {
-        console.error('Subscribe error:', err);
+        console.warn('[signup]', err);
         buttonLabel.textContent = originalLabel;
         input.disabled = false;
         form.style.opacity = '';
