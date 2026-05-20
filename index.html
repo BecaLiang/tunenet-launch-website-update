@@ -504,40 +504,34 @@
     text-decoration-color: var(--ink-dim);
   }
 
-/* Signup notification – matches dark theme with warm accent */
 .signup-notification {
-  font-family: var(--serif);
-  font-size: 13px;
-  line-height: 1.5;
-  margin-top: 16px;
-  padding: 10px 16px;
-  border-radius: 8px;
-  background: rgba(236, 230, 216, 0.05);
-  border: 1px solid var(--hairline-strong);
-  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 1.4;
+  margin-top: 12px;
+  padding: 6px 14px;
+  border-radius: 100px;
+  background: rgba(236, 230, 216, 0.06);
+  border: 1px solid var(--hairline);
+  color: var(--ink-dim);
   text-align: center;
   opacity: 0;
-  transform: translateY(-4px);
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transform: translateY(-2px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
   pointer-events: none;
+  display: inline-block;
+  max-width: 90%;
+  width: auto;
   backdrop-filter: blur(4px);
 }
 
-.signup-notification.show {
-  opacity: 1;
-  transform: translateY(0);
+/* Center the notification under the form */
+.hero-inner, .closing {
+  text-align: center;
 }
-
-.signup-notification.success {
-  background: rgba(240, 200, 144, 0.08);
-  border-color: rgba(240, 200, 144, 0.35);
-  color: var(--warm);
-}
-
-.signup-notification.error {
-  background: rgba(220, 80, 60, 0.08);
-  border-color: rgba(220, 80, 60, 0.35);
-  color: #e8a090;
+.signup-notification {
+  margin-left: auto;
+  margin-right: auto;
 }
 
   /* ====================== Section dividers (passage moments) ====================== */
@@ -7418,7 +7412,7 @@
       input.value = input.value.trim();
 
       if (honeypot && honeypot.value) {
-        if (notification) showNotification(notification, '✓ You’re on the list!', true);
+        if (notification) showNotification(notification, 'You’re on the list!', true);
         buttonLabel.textContent = 'Saved';
         input.disabled = true;
         input.value = '';
@@ -7441,7 +7435,7 @@
         await subscribe(input.value, formId === 'topForm' ? 'hero' : 'closing');
 
         buttonLabel.textContent = 'Saved';
-        if (notification) showNotification(notification, 'Congrats, you signed up successfully!', true);
+        if (notification) showNotification(notification, 'You’re now on the waitlist!', true);
         input.value = '';
         input.placeholder = "we'll be in touch when it opens.";
         form.style.borderColor = 'var(--ink)';
