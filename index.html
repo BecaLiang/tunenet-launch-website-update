@@ -7357,123 +7357,113 @@ nav.masthead .nav-cta {
 
 
 
-/* ===== Form with duplicate email handling ===== */
-/* ===== Form with duplicate email handling ===== */
-(function forms() {
-  const ENDPOINT = '/api/subscribe';
+<script>
+  /* ===== Form Handling - Resend + Clear Feedback ===== */
+  (function forms() {
+    const ENDPOINT = '/api/subscribe';
 
-  async function subscribe(email, source) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12000);
-    try {
-      const response = await fetch(ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, source }),
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(data.error || `HTTP ${response.status}`);
-      }
-      return data;
-    } catch (err) {
-      clearTimeout(timeout);
-      throw err;
-    }
-  }
-
-  function showNotification(container, message, isSuccess, isDuplicate = false) {
-    if (!container) return;
-    container.textContent = message;
-    container.classList.remove('success', 'error', 'duplicate', 'show');
-    void container.offsetWidth;
-    if (isDuplicate) {
-      container.classList.add('duplicate', 'show');
-    } else {
-      container.classList.add(isSuccess ? 'success' : 'error', 'show');
-    }
-    setTimeout(() => {
-      container.classList.remove('show');
-    }, 5000);
-  }
-
-  function wire(formId) {
-    const form = document.getElementById(formId);
-    if (!form) return;
-    
-    // Directly get the correct notification div by its unique ID
-    const notificationId = formId === 'topForm' ? 'topFormNotification' : 'bottomFormNotification';
-    const notification = document.getElementById(notificationId);
-    if (!notification) console.warn(`Notification #${notificationId} not found`);
-    
-    const input = form.querySelector('input[type="email"]');
-    const honeypot = form.querySelector('input[name="hp_email"]');
-    const buttonLabel = form.querySelector('button .label');
-    let submitting = false;
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (submitting) return;
-
-      input.value = input.value.trim();
-
-      // Honeypot check
-      if (honeypot && honeypot.value) {
-        if (notification) showNotification(notification, 'You’re on the list!', true);
-        buttonLabel.textContent = 'Saved';
-        input.disabled = true;
-        input.value = '';
-        return;
-      }
-
-      if (!input.checkValidity()) {
-        input.reportValidity();
-        if (notification) showNotification(notification, 'Please enter a valid email address.', false);
-        return;
-      }
-
-      submitting = true;
-      const originalLabel = buttonLabel.textContent;
-      buttonLabel.textContent = 'Sending';
-      input.disabled = true;
-      form.style.opacity = '0.85';
+    async function subscribe(email, source) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
 
       try {
-        const result = await subscribe(input.value, formId === 'topForm' ? 'hero' : 'closing');
-        
-        // Check for duplicate message
-        if (result.message && result.message.includes('already on the waitlist')) {
-          if (notification) showNotification(notification, 'You already signed up for this', true, true);
-          buttonLabel.textContent = 'Already signed up';
-          input.value = '';
-          input.placeholder = "you're already on the list";
-          form.style.borderColor = 'var(--ink)';
-          setTimeout(() => { form.style.opacity = '0.55'; }, 1200);
-        } else {
-          // New signup – success
-          if (notification) showNotification(notification, 'You’re now on the waitlist!', true);
-          buttonLabel.textContent = 'Saved';
-          input.value = '';
-          input.placeholder = "we'll be in touch when it opens.";
-          form.style.borderColor = 'var(--ink)';
-          setTimeout(() => { form.style.opacity = '0.55'; }, 1200);
-        }
-      } catch (err) {
-        console.warn('[signup]', err);
-        buttonLabel.textContent = originalLabel;
-        input.disabled = false;
-        form.style.opacity = '';
-        submitting = false;
-        if (notification) showNotification(notification, 'Could not sign up. Please try again later.', false);
-      }
-    });
-  }
+        const res = await fetch(ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, source }),
+          signal: controller.signal
+        });
 
-  wire('topForm');
-  wire('bottomForm');
-})();
+        clearTimeout(timeout);
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) throw new Error(data.error || 'Failed to join');
+
+        return data;
+      } catch (err) {
+        clearTimeout(timeout);
+        throw err;
+      }
+    }
+
+    function showNotification(formId, message, isSuccess = true) {
+      const notification = document.getElementById(formId + 'Notification');
+      if (!notification) return;
+
+      notification.textContent = message;
+      notification.classList.remove('success', 'error', 'show');
+      
+      void notification.offsetWidth; // force reflow
+      
+      notification.classList.add(isSuccess ? 'success' : 'error', 'show');
+
+      // Auto hide after 6 seconds
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 6000);
+    }
+
+    function wire(formId) {
+      const form = document.getElementById(formId);
+      if (!form) return;
+
+      const input = form.querySelector('input[type="email"]');
+      const honeypot = form.querySelector('input[name="hp_email"]');
+      const buttonLabel = form.querySelector('button .label');
+      let submitting = false;
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (submitting) return;
+
+        input.value = input.value.trim();
+
+        // Honeypot
+        if (honeypot && honeypot.value) {
+          showNotification(formId, "Thank you! You're on the list.");
+          buttonLabel.textContent = 'Saved';
+          input.disabled = true;
+          return;
+        }
+
+        if (!input.checkValidity()) {
+          input.reportValidity();
+          showNotification(formId, "Please enter a valid email", false);
+          return;
+        }
+
+        submitting = true;
+        const originalText = buttonLabel.textContent;
+        buttonLabel.textContent = 'Sending...';
+        input.disabled = true;
+
+        try {
+          await subscribe(input.value, formId === 'topForm' ? 'hero' : 'closing');
+
+          // Success
+          buttonLabel.textContent = 'Saved ✓';
+          input.value = '';
+          showNotification(formId, "You're on the waitlist! We'll notify you soon.");
+
+          // Optional: slight fade after success
+          setTimeout(() => form.style.opacity = '0.75', 800);
+
+        } catch (err) {
+          console.error(err);
+          buttonLabel.textContent = originalText;
+          showNotification(formId, "Something went wrong. Please try again.", false);
+          input.disabled = false;
+          submitting = false;
+        }
+      });
+    }
+
+    // Wire both forms
+    wire('topForm');
+    wire('bottomForm');
+  })();
+</script>
+     
 
   /* ===== Founder Spotify embeds — lazy load on first hover =====
      Spotify's iframe player refuses to render when the page is served from
