@@ -504,6 +504,42 @@
     text-decoration-color: var(--ink-dim);
   }
 
+/* Signup notification – matches dark theme with warm accent */
+.signup-notification {
+  font-family: var(--serif);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-top: 16px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: rgba(236, 230, 216, 0.05);
+  border: 1px solid var(--hairline-strong);
+  color: var(--ink);
+  text-align: center;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+}
+
+.signup-notification.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.signup-notification.success {
+  background: rgba(240, 200, 144, 0.08);
+  border-color: rgba(240, 200, 144, 0.35);
+  color: var(--warm);
+}
+
+.signup-notification.error {
+  background: rgba(220, 80, 60, 0.08);
+  border-color: rgba(220, 80, 60, 0.35);
+  color: #e8a090;
+}
+
   /* ====================== Section dividers (passage moments) ====================== */
   .eyebrow-tag {
     font-family: var(--label);
@@ -514,6 +550,8 @@
     margin-bottom: 40px;
     display: inline-block;
   }
+
+
 
   /* ====================== Product moment ====================== */
   section.product {
@@ -4425,6 +4463,7 @@
     </form>
     <p id="topFormStatus" class="visually-hidden" role="status" aria-live="polite"></p>
     <p class="signup-agreement reveal delay-3">By joining, you agree to our <a href="#privacy">Privacy</a> and <a href="#terms">Terms</a>.</p>
+    <div class="signup-notification" role="status" aria-live="polite"></div>
   </div>
 </section>
 
@@ -4977,6 +5016,7 @@
   </form>
   <p id="bottomFormStatus" class="visually-hidden" role="status" aria-live="polite"></p>
   <p class="signup-agreement reveal delay-3" style="margin: 12px auto 0; text-align: center;">By joining, you agree to our <a href="#privacy">Privacy</a> and <a href="#terms">Terms</a>.</p>
+  <div class="signup-notification" role="status" aria-live="polite"></div>
 </section>
 
 
@@ -7320,107 +7360,107 @@
 
 
 
-  /* ===== Form ===== *
-   * Both signup forms (top hero + bottom CTA) POST the email to a serverless
-   * function at /api/subscribe that proxies to **Resend Audiences**.
-   * We updated api/subscribe.js to use Resend.
-   
-   * page source. The function keeps the key on the server. */
-  (function forms() {
-    // Endpoint that proxies to Resend. Same-origin so no CORS to configure.
-    // Works out of the box on Vercel (/api/*), Netlify (with redirects), or
-    // any host with serverless functions.
-    const ENDPOINT = '/api/subscribe';
+/* ===== Form ===== *
+ * Both signup forms with visible success notification
+ */
+(function forms() {
+  const ENDPOINT = '/api/subscribe';
 
-    async function subscribe(email, source) {
-      const controller = new AbortController();
-      // 12s timeout — if the network or backend hangs, the user gets an error
-      // rather than a button stuck on "Sending" forever.
-      const timeout = setTimeout(() => controller.abort(), 12000);
-      try {
-        const response = await fetch(ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, source }),
-          signal: controller.signal,
-        });
-        clearTimeout(timeout);
-        if (!response.ok) {
-          const text = await response.text().catch(() => '');
-          throw new Error('subscribe failed: ' + response.status + ' ' + text);
-        }
-        return response.json().catch(() => ({}));
-      } catch (err) {
-        clearTimeout(timeout);
-        throw err;
-      }
-    }
-
-    function wire(formId) {
-      const form = document.getElementById(formId);
-      if (!form) return;
-      const input = form.querySelector('input[type="email"]');
-      const honeypot = form.querySelector('input[name="hp_email"]');
-      const buttonLabel = form.querySelector('button .label');
-      const status = document.getElementById(formId + 'Status');
-      let submitting = false;
-
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if (submitting) return;
-
-        input.value = input.value.trim();
-
-        // Honeypot triggered — pretend success so the bot doesn't retry.
-        // No real subscription happens.
-        if (honeypot && honeypot.value) {
-          buttonLabel.textContent = 'Saved';
-          input.disabled = true;
-          input.value = '';
-          if (status) status.textContent = "Saved.";
-          return;
-        }
-
-        if (!input.checkValidity()) {
-          input.reportValidity();
-          return;
-        }
-
-        submitting = true;
-        const originalLabel = buttonLabel.textContent;
-        buttonLabel.textContent = 'Sending';
-        input.disabled = true;
-        form.style.opacity = '0.85';
-        if (status) status.textContent = 'Sending…';
-
-        try {
-          await subscribe(input.value, formId === 'topForm' ? 'hero' : 'closing');
-
-          // Success
-          buttonLabel.textContent = 'Saved';
-          input.value = '';
-          input.placeholder = "we'll be in touch when it opens.";
-          form.style.borderColor = 'var(--ink)';
-          if (status) status.textContent = "Saved. We'll be in touch when it opens.";
-          setTimeout(() => { form.style.opacity = '0.55'; }, 1200);
-          // Leave submitting = true so a successful form can't be re-submitted.
-        } catch (err) {
-          console.warn('[signup]', err);
-          // Restore so the user can correct + retry
-          buttonLabel.textContent = originalLabel;
-          input.disabled = false;
-          form.style.opacity = '';
-          submitting = false;
-          if (status) {
-            status.textContent = "Couldn't reach the list. Try again in a moment?";
-          }
-        }
+  async function subscribe(email, source) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+    try {
+      const response = await fetch(ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, source }),
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        throw new Error('subscribe failed: ' + response.status + ' ' + text);
+      }
+      return response.json().catch(() => ({}));
+    } catch (err) {
+      clearTimeout(timeout);
+      throw err;
     }
+  }
 
-    wire('topForm');
-    wire('bottomForm');
-  })();
+  function showNotification(container, message, isSuccess) {
+    if (!container) return;
+    container.textContent = message;
+    container.classList.remove('success', 'error', 'show');
+    void container.offsetWidth; // force reflow
+    container.classList.add(isSuccess ? 'success' : 'error', 'show');
+    if (isSuccess) {
+      setTimeout(() => {
+        container.classList.remove('show');
+      }, 5000);
+    }
+  }
+
+  function wire(formId) {
+    const form = document.getElementById(formId);
+    if (!form) return;
+    const input = form.querySelector('input[type="email"]');
+    const honeypot = form.querySelector('input[name="hp_email"]');
+    const buttonLabel = form.querySelector('button .label');
+    // Find the notification div inside the same section
+    let notification = form.closest('section')?.querySelector('.signup-notification');
+    let submitting = false;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (submitting) return;
+
+      input.value = input.value.trim();
+
+      if (honeypot && honeypot.value) {
+        if (notification) showNotification(notification, '✓ You’re on the list!', true);
+        buttonLabel.textContent = 'Saved';
+        input.disabled = true;
+        input.value = '';
+        return;
+      }
+
+      if (!input.checkValidity()) {
+        input.reportValidity();
+        if (notification) showNotification(notification, 'Please enter a valid email address.', false);
+        return;
+      }
+
+      submitting = true;
+      const originalLabel = buttonLabel.textContent;
+      buttonLabel.textContent = 'Sending';
+      input.disabled = true;
+      form.style.opacity = '0.85';
+
+      try {
+        await subscribe(input.value, formId === 'topForm' ? 'hero' : 'closing');
+
+        buttonLabel.textContent = 'Saved';
+        if (notification) showNotification(notification, '🎉 Congrats, you signed up successfully!', true);
+        input.value = '';
+        input.placeholder = "we'll be in touch when it opens.";
+        form.style.borderColor = 'var(--ink)';
+        setTimeout(() => { form.style.opacity = '0.55'; }, 1200);
+      } catch (err) {
+        console.warn('[signup]', err);
+        buttonLabel.textContent = originalLabel;
+        input.disabled = false;
+        form.style.opacity = '';
+        submitting = false;
+        if (notification) showNotification(notification, '❌ Could not sign up. Please try again later.', false);
+      }
+    });
+  }
+
+  wire('topForm');
+  wire('bottomForm');
+})();
+           
 
   /* ===== Founder Spotify embeds — lazy load on first hover =====
      Spotify's iframe player refuses to render when the page is served from
