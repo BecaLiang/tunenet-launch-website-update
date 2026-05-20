@@ -7356,9 +7356,7 @@ nav.masthead .nav-cta {
 
 
 
-/* ===== Form ===== *
- * Both signup forms with visible success notification
- */
+/* ===== Form with guaranteed visible notification ===== */
 (function forms() {
   const ENDPOINT = '/api/subscribe';
 
@@ -7385,10 +7383,15 @@ nav.masthead .nav-cta {
   }
 
   function showNotification(container, message, isSuccess) {
-    if (!container) return;
+    if (!container) {
+      console.warn('showNotification: container not found');
+      return;
+    }
+    console.log('Showing notification:', message, isSuccess);
     container.textContent = message;
     container.classList.remove('success', 'error', 'show');
-    void container.offsetWidth; // force reflow
+    // Force reflow
+    void container.offsetWidth;
     container.classList.add(isSuccess ? 'success' : 'error', 'show');
     if (isSuccess) {
       setTimeout(() => {
@@ -7399,12 +7402,34 @@ nav.masthead .nav-cta {
 
   function wire(formId) {
     const form = document.getElementById(formId);
-    if (!form) return;
+    if (!form) {
+      console.warn('Form not found:', formId);
+      return;
+    }
     const input = form.querySelector('input[type="email"]');
     const honeypot = form.querySelector('input[name="hp_email"]');
     const buttonLabel = form.querySelector('button .label');
-    // Find the notification div inside the same section
-    let notification = form.closest('section')?.querySelector('.signup-notification');
+    
+    // MORE RELIABLE container selection: find by class inside the same .hero-inner or .closing
+    let notification = null;
+    if (formId === 'topForm') {
+      const heroInner = form.closest('.hero-inner');
+      if (heroInner) notification = heroInner.querySelector('.signup-notification');
+    } else {
+      const closingSection = form.closest('.closing');
+      if (closingSection) notification = closingSection.querySelector('.signup-notification');
+    }
+    // Fallback: look anywhere in the same parent section
+    if (!notification) {
+      notification = form.closest('section')?.querySelector('.signup-notification');
+    }
+    
+    if (!notification) {
+      console.error('Notification container not found for form', formId);
+    } else {
+      console.log('Notification found for', formId);
+    }
+
     let submitting = false;
 
     form.addEventListener('submit', async (e) => {
@@ -7413,6 +7438,7 @@ nav.masthead .nav-cta {
 
       input.value = input.value.trim();
 
+      // Honeypot
       if (honeypot && honeypot.value) {
         if (notification) showNotification(notification, 'You’re on the list!', true);
         buttonLabel.textContent = 'Saved';
@@ -7436,14 +7462,17 @@ nav.masthead .nav-cta {
       try {
         await subscribe(input.value, formId === 'topForm' ? 'hero' : 'closing');
 
+        // SUCCESS
+        console.log('Subscribe succeeded');
         buttonLabel.textContent = 'Saved';
         if (notification) showNotification(notification, 'You’re now on the waitlist!', true);
         input.value = '';
         input.placeholder = "we'll be in touch when it opens.";
         form.style.borderColor = 'var(--ink)';
         setTimeout(() => { form.style.opacity = '0.55'; }, 1200);
+        // Keep submitting = true to prevent double submission
       } catch (err) {
-        console.warn('[signup]', err);
+        console.error('Subscribe error:', err);
         buttonLabel.textContent = originalLabel;
         input.disabled = false;
         form.style.opacity = '';
