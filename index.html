@@ -7441,7 +7441,7 @@
         await subscribe(input.value, formId === 'topForm' ? 'hero' : 'closing');
 
         buttonLabel.textContent = 'Saved';
-        if (notification) showNotification(notification, '🎉 Congrats, you signed up successfully!', true);
+        if (notification) showNotification(notification, 'Congrats, you signed up successfully!', true);
         input.value = '';
         input.placeholder = "we'll be in touch when it opens.";
         form.style.borderColor = 'var(--ink)';
@@ -7452,7 +7452,7 @@
         input.disabled = false;
         form.style.opacity = '';
         submitting = false;
-        if (notification) showNotification(notification, '❌ Could not sign up. Please try again later.', false);
+        if (notification) showNotification(notification, 'Could not sign up. Please try again later.', false);
       }
     });
   }
