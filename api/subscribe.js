@@ -1,5 +1,5 @@
 /**
- * /api/subscribe.js — Resend version
+ * /api/subscribe.js — Resend version (FIXED)
  * Proxies waitlist signup forms to Resend Audiences / Contacts.
  */
 
@@ -31,8 +31,9 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid email' });
   }
 
-  const API_KEY = process.env.re_CTeAFjH7_CbmQW1VDfghwfdVX511NwkAT;
-  const AUDIENCE_ID = process.env.2e6ddd67-04a3-4f4c-9dbd-26bd51e6ced6;
+  // Use proper environment variable names
+  const API_KEY = process.env.RESEND_API_KEY;
+  const AUDIENCE_ID = process.env.RESEND_AUDIENCE_ID;
 
   if (!API_KEY || !AUDIENCE_ID) {
     console.error('[subscribe] Missing RESEND_API_KEY or RESEND_AUDIENCE_ID');
@@ -40,7 +41,10 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const response = await fetch('https://api.resend.com/contacts', {
+    // Correct Resend API endpoint (audience ID in URL, not body)
+    const url = `https://api.resend.com/audiences/${AUDIENCE_ID}/contacts`;
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${API_KEY}`,
@@ -48,14 +52,11 @@ module.exports = async function handler(req, res) {
       },
       body: JSON.stringify({
         email: email,
-        audienceId: AUDIENCE_ID,
-        firstName: '',           
-        lastName: '',
+        // firstName and lastName are optional
         unsubscribed: false,
-        properties: {
-          source: source,
-          joined_at: new Date().toISOString(),
-        }
+        // Custom properties go here if your audience supports them
+        // Note: Resend's contact API currently doesn't accept custom properties via this endpoint
+        // So we omit 'properties' for now to avoid errors
       }),
     });
 
@@ -71,6 +72,8 @@ module.exports = async function handler(req, res) {
       return res.status(502).json({ error: 'Subscription service unavailable' });
     }
 
+    const data = await response.json().catch(() => ({}));
+    console.log('[subscribe] Success:', data);
     return res.status(200).json({ ok: true });
 
   } catch (err) {
