@@ -506,40 +506,52 @@ nav.masthead .nav-cta {
     text-decoration-color: var(--ink-dim);
   }
 
+/* ====================== Signup Notification ====================== */
 .signup-notification {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.4;
-  margin-top: 12px;
-  padding: 6px 14px;
+  margin-top: 14px;
+  padding: 10px 18px;
   border-radius: 100px;
-  background: rgba(236, 230, 216, 0.06);
-  border: 1px solid var(--hairline);
+  background: rgba(5, 5, 7, 0.75);
+  border: 1px solid var(--hairline-strong);
   color: var(--ink-dim);
   text-align: center;
   opacity: 0;
-  transform: translateY(-2px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  pointer-events: none;
-  display: inline-block;
-  max-width: 90%;
-  width: auto;
-  backdrop-filter: blur(4px);
-}
-
-/* Center the notification under the form */
-.hero-inner, .closing {
-  text-align: center;
-}
-.signup-notification {
+  transform: translateY(8px);
+  transition: all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  max-width: 520px;
   margin-left: auto;
   margin-right: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .signup-notification.show {
   opacity: 1;
   transform: translateY(0);
-  pointer-events: auto;
+}
+
+.signup-notification.success {
+  border-color: rgba(240, 200, 144, 0.4);
+  background: rgba(240, 200, 144, 0.08);
+  color: var(--warm);
+  box-shadow: 0 0 20px rgba(240, 200, 144, 0.15);
+}
+
+.signup-notification.error {
+  border-color: rgba(240, 100, 100, 0.4);
+  background: rgba(240, 100, 100, 0.08);
+  color: #ff8888;
+}
+
+/* Center under both forms */
+.hero-inner .signup-notification,
+.closing .signup-notification {
+  margin-left: auto;
+  margin-right: auto;
 }
 
   /* ====================== Section dividers (passage moments) ====================== */
