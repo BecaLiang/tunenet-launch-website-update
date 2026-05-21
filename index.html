@@ -510,23 +510,23 @@ nav.masthead .nav-cta {
 .signup-notification {
   font-family: var(--mono);
   font-size: 11px;
-  line-height: 1.4;
+  line-height: 1.45;
   margin-top: 14px;
-  padding: 10px 18px;
+  padding: 10px 20px;
   border-radius: 100px;
-  background: rgba(5, 5, 7, 0.75);
+  background: rgba(5, 5, 7, 0.8);
   border: 1px solid var(--hairline-strong);
   color: var(--ink-dim);
   text-align: center;
   opacity: 0;
   transform: translateY(8px);
-  transition: all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   max-width: 520px;
   margin-left: auto;
   margin-right: auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5);
 }
 
 .signup-notification.show {
@@ -534,20 +534,22 @@ nav.masthead .nav-cta {
   transform: translateY(0);
 }
 
+/* Success - Warm / Cream tone (matches your brand) */
 .signup-notification.success {
-  border-color: rgba(240, 200, 144, 0.4);
-  background: rgba(240, 200, 144, 0.08);
+  border-color: rgba(240, 200, 144, 0.5);
+  background: rgba(240, 200, 144, 0.09);
   color: var(--warm);
-  box-shadow: 0 0 20px rgba(240, 200, 144, 0.15);
+  box-shadow: 0 0 22px rgba(240, 200, 144, 0.2);
 }
 
+/* Error */
 .signup-notification.error {
-  border-color: rgba(240, 100, 100, 0.4);
+  border-color: rgba(240, 120, 120, 0.4);
   background: rgba(240, 100, 100, 0.08);
-  color: #ff8888;
+  color: #ff9a9a;
 }
 
-/* Center under both forms */
+/* Center the notification */
 .hero-inner .signup-notification,
 .closing .signup-notification {
   margin-left: auto;
