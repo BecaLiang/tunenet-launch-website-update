@@ -536,6 +536,12 @@ nav.masthead .nav-cta {
   margin-right: auto;
 }
 
+.signup-notification.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
   /* ====================== Section dividers (passage moments) ====================== */
   .eyebrow-tag {
     font-family: var(--label);
@@ -547,6 +553,18 @@ nav.masthead .nav-cta {
     display: inline-block;
   }
 
+
+.signup-notification.success {
+  border-color: rgba(144, 240, 160, 0.3);
+  background: rgba(144, 240, 160, 0.08);
+  color: #90f0a0;
+}
+
+.signup-notification.error {
+  border-color: rgba(240, 144, 144, 0.3);
+  background: rgba(240, 144, 144, 0.08);
+  color: #f09090;
+}
 
 
   /* ====================== Product moment ====================== */
